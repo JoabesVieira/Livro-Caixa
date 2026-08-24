@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Livro Caixa</title>
-<meta name="theme-color" content="#12211B">
+<meta name="theme-color" content="#4A1E2A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Livro Caixa">
@@ -12,9 +12,9 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <style>
 :root{
-  --bg:#12211B; --surface:#1B2E25; --surface2:#23392C; --line:#33493C;
-  --ivory:#F1EAD9; --muted:#8FA69A; --gold:#C9A15C; --income:#6FAE8E;
-  --expense:#C2543A; --warn:#D9A441;
+  --bg:#4A1E2A; --surface:#5C2636; --surface2:#6E3040; --line:#7F3A4C;
+  --ivory:#F5E9E2; --muted:#C79AA6; --gold:#D4A857; --income:#6FAE8E;
+  --expense:#E05252; --warn:#E0A83E;
   --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
   --serif:Georgia,"Times New Roman",serif;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
@@ -38,6 +38,14 @@ h1{font-family:var(--serif);font-size:26px;font-weight:400;margin:4px 0 16px}
   font-family:var(--mono);font-size:13px;background:var(--surface2);border:1px solid var(--line)}
 .btn-gold{background:var(--gold);color:var(--bg);border-color:var(--gold)}
 .card{background:var(--surface);border-radius:3px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:18px;
+  scrollbar-width:thin}
+.tabs::-webkit-scrollbar{height:4px}
+.tabs::-webkit-scrollbar-thumb{background:var(--line);border-radius:99px}
+.tab{font-family:var(--mono);font-size:12px;padding:8px 13px;border-radius:3px;
+  background:var(--surface);color:var(--muted);white-space:nowrap;flex:0 0 auto;
+  border:1px solid transparent}
+.tab.on{background:var(--gold);color:var(--bg)}
 .grid3{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px}
 .grid2{display:grid;grid-template-columns:1fr;gap:14px;margin-bottom:24px}
 @media(min-width:640px){.grid3{grid-template-columns:repeat(3,1fr)}h1{font-size:30px}}
@@ -85,6 +93,7 @@ h1{font-family:var(--serif);font-size:26px;font-weight:400;margin:4px 0 16px}
 .row .t small{font-family:var(--mono);font-size:11px;color:var(--muted);display:block;margin-top:2px}
 .row .r{display:flex;align-items:center;gap:10px;flex:0 0 auto}
 .amt{font-family:var(--mono);font-size:13px;white-space:nowrap}
+.run{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
 .del{opacity:.45;padding:4px;font-size:14px}
 .empty{padding:36px 16px;text-align:center;color:var(--muted);font-size:14px;background:var(--surface);border-radius:3px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;
@@ -115,54 +124,45 @@ svg{display:block;width:100%;height:auto}
       <button class="btn" id="btnImport">↑ Importar Excel</button>
       <button class="btn" id="btnExport">↓ Exportar Excel</button>
       <button class="btn hidden" id="btnNotif">🔔 Ativar avisos</button>
-      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" class="hidden">
+      <input type="file" id="fileInput" class="hidden"
+        accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,text/comma-separated-values,public.data">
     </div>
   </div>
 
   <div id="alerts"></div>
 
-  <div class="grid3">
-    <div class="card stat" style="border-left-color:var(--income)">
-      <div class="lbl">Recebido</div><div class="v" id="sIncome" style="color:var(--income)">—</div>
-    </div>
-    <div class="card stat" style="border-left-color:var(--expense)">
-      <div class="lbl">Pago</div><div class="v" id="sExpense" style="color:var(--expense)">—</div>
-    </div>
-    <div class="card stat" style="border-left-color:var(--gold)">
-      <div class="lbl">Saldo realizado</div><div class="v" id="sSaldo" style="color:var(--gold)">—</div>
-    </div>
-  </div>
+  <div class="tabs" id="tabs"></div>
 
-  <div class="strip">
-    <span>A receber <b id="sRecv" style="color:var(--income)">—</b></span>
-    <span>A pagar <b id="sPay" style="color:var(--expense)">—</b></span>
-    <span>Saldo previsto <b id="sFut" style="color:var(--gold)">—</b></span>
-  </div>
+  <div id="mainDash">
+    <div class="grid3" id="statCards"></div>
 
-  <div class="grid2">
-    <div class="card panel">
-      <div class="panelhead">
-        <span class="lbl">Por categoria</span>
-        <div class="seg" id="pieSeg">
-          <button data-m="expense" class="on">Despesas</button>
-          <button data-m="income">Receitas</button>
+    <div class="grid2" id="charts">
+      <div class="card panel">
+        <div class="panelhead">
+          <span class="lbl">Por categoria</span>
+          <div class="seg" id="pieSeg">
+            <button data-m="expense" class="on">Despesas</button>
+            <button data-m="income">Receitas</button>
+          </div>
         </div>
+        <div id="pieWrap"></div>
       </div>
-      <div id="pieWrap"></div>
+      <div class="card panel">
+        <div class="panelhead"><span class="lbl">Últimos 6 meses</span></div>
+        <div id="barWrap"></div>
+      </div>
     </div>
-    <div class="card panel">
-      <div class="panelhead"><span class="lbl">Últimos 6 meses</span></div>
-      <div id="barWrap"></div>
+
+    <div style="margin-bottom:24px" id="budgetsSection">
+      <div class="panelhead">
+        <span class="lbl">Orçamento por categoria</span>
+        <button class="mono" id="btnBud" style="font-size:11px;color:var(--gold)">editar limites</button>
+      </div>
+      <div id="budgets"></div>
     </div>
   </div>
 
-  <div style="margin-bottom:24px">
-    <div class="panelhead">
-      <span class="lbl">Orçamento por categoria</span>
-      <button class="mono" id="btnBud" style="font-size:11px;color:var(--gold)">editar limites</button>
-    </div>
-    <div id="budgets"></div>
-  </div>
+  <div id="forecastStrip" class="hidden"></div>
 
   <div class="chips" id="chips"></div>
   <div id="list"></div>
@@ -193,10 +193,11 @@ svg{display:block;width:100%;height:auto}
 <script>
 const EXPENSE_CATS=["Alimentação","Moradia","Transporte","Lazer","Saúde","Educação","Outros"];
 const INCOME_CATS=["Salário","Freelance","Investimentos","Outros"];
-const PIE=["#C9A15C","#6FAE8E","#C2543A","#7C9CB5","#A98BC2","#D4B483","#8FA69A"];
-const C={income:"#6FAE8E",expense:"#C2543A",gold:"#C9A15C",warn:"#D9A441",muted:"#8FA69A",line:"#33493C",surface:"#1B2E25",surface2:"#23392C",ivory:"#F1EAD9"};
+const PIE=["#D4A857","#6FAE8E","#E05252","#8AA6C7","#C79AA6","#B98CC9","#E0A83E"];
+const C={income:"#6FAE8E",expense:"#E05252",gold:"#D4A857",warn:"#E0A83E",muted:"#C79AA6",line:"#7F3A4C",surface:"#5C2636",surface2:"#6E3040",ivory:"#F5E9E2"};
 
 let tx=[], budgets={}, statusFilter="all", catFilter=null, pieMode="expense", editBud=false;
+let activeTab="all";
 let form={type:"expense",status:"settled"};
 
 const $=id=>document.getElementById(id);
@@ -231,18 +232,18 @@ function toast(msg){
 }
 
 /* ---------- derived ---------- */
-function sorted(){return [...tx].sort((a,b)=>a.dueDate<b.dueDate?1:-1)}
-function totals(){
+function sorted(list){return [...list].sort((a,b)=>a.dueDate<b.dueDate?1:-1)}
+function totals(list){
   let income=0,expense=0,toReceive=0,toPay=0;
-  for(const t of tx){
+  for(const t of list){
     if(t.status==="settled"){t.type==="income"?income+=t.amount:expense+=t.amount}
     else{t.type==="income"?toReceive+=t.amount:toPay+=t.amount}
   }
   return{income,expense,saldo:income-expense,toReceive,toPay};
 }
-function byCat(type){
+function byCat(type,list){
   const m={};
-  for(const t of tx){if(t.type!==type)continue;m[t.category]=(m[t.category]||0)+t.amount}
+  for(const t of list){if(t.type!==type)continue;m[t.category]=(m[t.category]||0)+t.amount}
   return Object.entries(m).map(([name,value])=>({name,value})).sort((a,b)=>b.value-a.value);
 }
 function alertsData(){
@@ -255,6 +256,21 @@ function alertsData(){
   const s=(a,b)=>a.dueDate>b.dueDate?1:-1;
   return{overdue:overdue.sort(s),soon:soon.sort(s)};
 }
+function scopedTx(){
+  if(activeTab==="all")return tx;
+  if(activeTab==="forecast")return tx.filter(t=>t.status==="pending");
+  return tx.filter(t=>t.dueDate.slice(0,7)===activeTab);
+}
+function monthKeys(){
+  return [...new Set(tx.map(t=>t.dueDate.slice(0,7)))].sort();
+}
+function monthLabel(key){
+  const [y,m]=key.split("-");
+  const d=new Date(Number(y),Number(m)-1,1);
+  const showYear=new Set(monthKeys().map(k=>k.split("-")[0])).size>1;
+  const lbl=d.toLocaleDateString("pt-BR",{month:"short"}).replace(".","");
+  return showYear?`${lbl}/${y.slice(2)}`:lbl;
+}
 
 /* ---------- charts ---------- */
 function arc(cx,cy,r,r2,a0,a1){
@@ -263,11 +279,11 @@ function arc(cx,cy,r,r2,a0,a1){
   const [x0,y0]=p(a0,r),[x1,y1]=p(a1,r),[x2,y2]=p(a1,r2),[x3,y3]=p(a0,r2);
   return`M${x0} ${y0}A${r} ${r} 0 ${big} 1 ${x1} ${y1}L${x2} ${y2}A${r2} ${r2} 0 ${big} 0 ${x3} ${y3}Z`;
 }
-function renderPie(){
-  const data=byCat(pieMode);
+function renderPie(scope){
+  const data=byCat(pieMode,scope);
   const w=$("pieWrap");
   if(!data.length){
-    w.innerHTML=`<p style="text-align:center;padding:44px 0;color:var(--muted);font-size:14px">Sem ${pieMode==="expense"?"despesas":"receitas"} ainda</p>`;
+    w.innerHTML=`<p style="text-align:center;padding:44px 0;color:var(--muted);font-size:14px">Sem ${pieMode==="expense"?"despesas":"receitas"} neste recorte</p>`;
     return;
   }
   const total=data.reduce((s,d)=>s+d.value,0);
@@ -279,7 +295,6 @@ function renderPie(){
       stroke="${sel?C.ivory:C.surface}" stroke-width="${sel?2:1}" data-cat="${esc(d.name)}" style="cursor:pointer"></path>`;
     a=a1;
   });
-  const top=data[0];
   w.innerHTML=`<svg viewBox="0 0 200 200" style="max-width:240px;margin:0 auto">
     ${paths}
     <text x="100" y="94" text-anchor="middle" fill="${C.muted}" font-family="var(--mono)" font-size="9">TOTAL</text>
@@ -307,28 +322,38 @@ function renderBar(){
   vals.forEach((v,i)=>{
     const x=pad+i*bw;
     const hi=(v.inc/max)*(H-40),he=(v.exp/max)*(H-40);
+    const on=months[i].key===activeTab;
+    bars+=`<g data-mkey="${months[i].key}" style="cursor:pointer">`;
+    if(on)bars+=`<rect x="${x+1}" y="6" width="${bw-2}" height="${H-30}" fill="${C.surface2}" rx="3"></rect>`;
     bars+=`<rect x="${x+bw*0.14}" y="${H-24-hi}" width="${bw*0.3}" height="${hi}" fill="${C.income}" rx="2"></rect>`;
     bars+=`<rect x="${x+bw*0.52}" y="${H-24-he}" width="${bw*0.3}" height="${he}" fill="${C.expense}" rx="2"></rect>`;
-    bars+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" fill="${C.muted}" font-size="10">${months[i].label}</text>`;
+    bars+=`<text x="${x+bw/2}" y="${H-8}" text-anchor="middle" fill="${on?C.gold:C.muted}" font-size="10">${months[i].label}</text>`;
+    bars+="</g>";
   });
   $("barWrap").innerHTML=`<svg viewBox="0 0 ${W} ${H}">
     <line x1="${pad}" y1="${H-24}" x2="${W-pad}" y2="${H-24}" stroke="${C.line}"></line>
     ${bars}</svg>
     <div class="legend"><span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span class="dot" style="background:${C.income}"></span>Receitas</span>
     <span style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)"><span class="dot" style="background:${C.expense}"></span>Despesas</span></div>`;
+  $("barWrap").querySelectorAll("[data-mkey]").forEach(el=>el.onclick=()=>{
+    const k=el.dataset.mkey;
+    if(monthKeys().includes(k)){activeTab=activeTab===k?"all":k;render()}
+    else toast("Sem lançamentos nesse mês ainda.");
+  });
 }
 
 /* ---------- render ---------- */
 function render(){
-  const t=totals();
-  $("sIncome").textContent=brl(t.income);
-  $("sExpense").textContent=brl(t.expense);
-  $("sSaldo").textContent=brl(t.saldo);
-  $("sSaldo").style.color=t.saldo>=0?C.gold:C.expense;
-  $("sRecv").textContent=brl(t.toReceive);
-  $("sPay").textContent=brl(t.toPay);
-  $("sFut").textContent=brl(t.saldo+t.toReceive-t.toPay);
+  const scope=scopedTx();
+  const isForecast=activeTab==="forecast";
+  const gt=totals(tx);
 
+  /* tabs */
+  const items=[["all","Visão geral"],["forecast","Previsto"],...monthKeys().map(k=>[k,monthLabel(k)])];
+  $("tabs").innerHTML=items.map(([v,l])=>`<button class="tab ${activeTab===v?"on":""}" data-tab="${v}">${l}</button>`).join("");
+  $("tabs").querySelectorAll("[data-tab]").forEach(el=>el.onclick=()=>{activeTab=el.dataset.tab;catFilter=null;render()});
+
+  /* alerts: sempre globais */
   const a=alertsData();
   let ah="";
   const grp=(items,color,title)=>`<div class="alertgrp" style="border-left-color:${color};${ah?"border-top:1px solid var(--line)":""}">
@@ -341,49 +366,106 @@ function render(){
   if(a.soon.length)ah+=grp(a.soon,C.warn,"⏱ Vence em até 7 dias");
   $("alerts").innerHTML=ah?`<div class="alerts">${ah}</div>`:"";
 
-  renderPie();renderBar();
+  /* forecast strip: sempre visível, dados globais */
+  const fs=$("forecastStrip");
+  fs.classList.remove("hidden");
+  fs.innerHTML=`<div class="strip">
+    <span>Saldo realizado <b style="color:${gt.saldo>=0?C.gold:C.expense}">${brl(gt.saldo)}</b></span>
+    <span>A receber <b style="color:${C.income}">${brl(gt.toReceive)}</b></span>
+    <span>A pagar <b style="color:${C.expense}">${brl(gt.toPay)}</b></span>
+    <span>Saldo previsto <b style="color:${C.gold}">${brl(gt.saldo+gt.toReceive-gt.toPay)}</b></span>
+  </div>`;
 
-  const spentMap={};byCat("expense").forEach(c=>spentMap[c.name]=c.value);
-  const cats=[...EXPENSE_CATS,...Object.keys(spentMap).filter(c=>!EXPENSE_CATS.includes(c))];
-  $("btnBud").textContent=editBud?"fechar edição":"editar limites";
-  $("budgets").innerHTML=cats.map(c=>{
-    const spent=spentMap[c]||0,lim=budgets[c]||0,over=lim>0&&spent>lim;
-    const pct=lim>0?Math.min(100,spent/lim*100):0;
-    return`<div class="bud"><div class="budtop"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c)}</span>
-    <span class="r"><span style="color:${over?C.expense:C.ivory}">${brl(spent)}</span>
-    ${editBud?`<input type="number" inputmode="decimal" data-bud="${esc(c)}" value="${lim||""}" placeholder="limite">`
-      :`<span>/ ${lim>0?brl(lim):"sem limite"}</span>`}</span></div>
-    ${lim>0?`<div class="bar"><i style="width:${pct}%;background:${over?C.expense:C.gold}"></i></div>`:""}</div>`;
-  }).join("");
-  $("budgets").querySelectorAll("[data-bud]").forEach(el=>el.onchange=()=>{
-    budgets[el.dataset.bud]=Number(el.value)||0;save();render();
-  });
+  if(isForecast){
+    $("mainDash").classList.add("hidden");
+  }else{
+    $("mainDash").classList.remove("hidden");
+    const t=totals(scope);
+    $("statCards").innerHTML=`
+      <div class="card stat" style="border-left-color:var(--income)">
+        <div class="lbl">Recebido</div><div class="v" style="color:${C.income}">${brl(t.income)}</div>
+      </div>
+      <div class="card stat" style="border-left-color:var(--expense)">
+        <div class="lbl">Pago</div><div class="v" style="color:${C.expense}">${brl(t.expense)}</div>
+      </div>
+      <div class="card stat" style="border-left-color:var(--gold)">
+        <div class="lbl">Saldo do recorte</div><div class="v" style="color:${t.saldo>=0?C.gold:C.expense}">${brl(t.saldo)}</div>
+      </div>`;
 
-  const nPend=tx.filter(x=>x.status==="pending").length;
-  const chips=[["all",`Todos · ${tx.length}`],["pending",`Pendentes · ${nPend}`],["settled",`Quitados · ${tx.length-nPend}`]];
-  $("chips").innerHTML=chips.map(([v,l])=>`<button class="chip ${statusFilter===v?"on":""}" data-f="${v}">${l}</button>`).join("")
-    +(catFilter?`<button class="chip cat" data-clear="1">${esc(catFilter)} ✕</button>`:"");
-  $("chips").querySelectorAll("[data-f]").forEach(el=>el.onclick=()=>{statusFilter=el.dataset.f;render()});
+    renderPie(scope);renderBar();
+
+    const spentMap={};byCat("expense",scope).forEach(c=>spentMap[c.name]=c.value);
+    const cats=[...EXPENSE_CATS,...Object.keys(spentMap).filter(c=>!EXPENSE_CATS.includes(c))];
+    $("btnBud").textContent=editBud?"fechar edição":"editar limites";
+    $("budgets").innerHTML=cats.map(c=>{
+      const spent=spentMap[c]||0,lim=budgets[c]||0,over=lim>0&&spent>lim;
+      const pct=lim>0?Math.min(100,spent/lim*100):0;
+      return`<div class="bud"><div class="budtop"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(c)}</span>
+      <span class="r"><span style="color:${over?C.expense:C.ivory}">${brl(spent)}</span>
+      ${editBud?`<input type="number" inputmode="decimal" data-bud="${esc(c)}" value="${lim||""}" placeholder="limite">`
+        :`<span>/ ${lim>0?brl(lim):"sem limite"}</span>`}</span></div>
+      ${lim>0?`<div class="bar"><i style="width:${pct}%;background:${over?C.expense:C.gold}"></i></div>`:""}</div>`;
+    }).join("");
+    $("budgets").querySelectorAll("[data-bud]").forEach(el=>el.onchange=()=>{
+      budgets[el.dataset.bud]=Number(el.value)||0;save();render();
+    });
+  }
+
+  /* chips + lista */
+  if(isForecast){
+    $("chips").innerHTML=catFilter?`<button class="chip cat" data-clear="1">${esc(catFilter)} ✕</button>`:"";
+  }else{
+    const nPend=scope.filter(x=>x.status==="pending").length;
+    const chipsArr=[["all",`Todos · ${scope.length}`],["pending",`Pendentes · ${nPend}`],["settled",`Quitados · ${scope.length-nPend}`]];
+    $("chips").innerHTML=chipsArr.map(([v,l])=>`<button class="chip ${statusFilter===v?"on":""}" data-f="${v}">${l}</button>`).join("")
+      +(catFilter?`<button class="chip cat" data-clear="1">${esc(catFilter)} ✕</button>`:"");
+    $("chips").querySelectorAll("[data-f]").forEach(el=>el.onclick=()=>{statusFilter=el.dataset.f;render()});
+  }
   const clr=$("chips").querySelector("[data-clear]");if(clr)clr.onclick=()=>{catFilter=null;render()};
 
-  const vis=sorted().filter(t=>{
-    if(statusFilter==="pending"&&t.status!=="pending")return false;
-    if(statusFilter==="settled"&&t.status!=="settled")return false;
-    if(catFilter&&t.category!==catFilter)return false;
-    return true;
-  });
-  $("list").innerHTML=vis.length?`<div class="list">${vis.map(t=>{
-    const pend=t.status==="pending",late=pend&&daysUntil(t.dueDate)<0;
-    return`<div class="row"><div class="l">
-      <button class="tick ${pend?"pend":""} ${late?"late":""}" data-tick="${t.id}"
-        style="${pend?"":`background:${t.type==="income"?C.income:C.expense}`}"
-        aria-label="${pend?"Marcar como quitado":"Marcar como pendente"}">✓</button>
-      <div class="t"><p>${esc(t.description)}</p>
-      <small style="color:${late?C.expense:C.muted}">${esc(t.category)} · ${fmt(t.dueDate)}${pend?(late?" · vencido":" · pendente"):""}</small></div></div>
-      <div class="r"><span class="amt" style="color:${t.type==="income"?C.income:C.expense};opacity:${pend?.6:1}">${t.type==="income"?"+":"−"} ${brl(t.amount)}</span>
-      <button class="del" data-del="${t.id}" aria-label="Excluir">🗑</button></div></div>`;
-  }).join("")}</div>`
-  :`<div class="empty">${tx.length?"Nenhum lançamento com esse filtro.":"Nenhum lançamento ainda. Adicione o primeiro ou importe sua planilha."}</div>`;
+  let vis;
+  if(isForecast){
+    vis=sorted(scope).slice().reverse(); // ascendente: proximo vencimento primeiro
+    if(catFilter)vis=vis.filter(t=>t.category===catFilter);
+  }else{
+    vis=sorted(scope).filter(t=>{
+      if(statusFilter==="pending"&&t.status!=="pending")return false;
+      if(statusFilter==="settled"&&t.status!=="settled")return false;
+      if(catFilter&&t.category!==catFilter)return false;
+      return true;
+    });
+  }
+
+  if(!vis.length){
+    $("list").innerHTML=`<div class="empty">${tx.length?"Nenhum lançamento com esse filtro.":"Nenhum lançamento ainda. Adicione o primeiro ou importe sua planilha."}</div>`;
+  }else if(isForecast){
+    let running=gt.saldo;
+    const runs=vis.map(t=>{running+=t.type==="income"?t.amount:-t.amount;return running});
+    $("list").innerHTML=`<div class="list">${vis.map((t,i)=>{
+      const late=daysUntil(t.dueDate)<0;
+      return`<div class="row"><div class="l">
+        <button class="tick pend ${late?"late":""}" data-tick="${t.id}" aria-label="Marcar como quitado">✓</button>
+        <div class="t"><p>${esc(t.description)}</p>
+        <small style="color:${late?C.expense:C.muted}">${esc(t.category)} · ${fmt(t.dueDate)}${late?" · vencido":""}</small></div></div>
+        <div class="r"><div style="text-align:right">
+          <div class="amt" style="color:${t.type==="income"?C.income:C.expense}">${t.type==="income"?"+":"−"} ${brl(t.amount)}</div>
+          <div class="run">saldo: ${brl(runs[i])}</div>
+        </div>
+        <button class="del" data-del="${t.id}" aria-label="Excluir">🗑</button></div></div>`;
+    }).join("")}</div>`;
+  }else{
+    $("list").innerHTML=`<div class="list">${vis.map((t,i)=>{
+      const pend=t.status==="pending",late=pend&&daysUntil(t.dueDate)<0;
+      return`<div class="row"><div class="l">
+        <button class="tick ${pend?"pend":""} ${late?"late":""}" data-tick="${t.id}"
+          style="${pend?"":`background:${t.type==="income"?C.income:C.expense}`}"
+          aria-label="${pend?"Marcar como quitado":"Marcar como pendente"}">✓</button>
+        <div class="t"><p>${esc(t.description)}</p>
+        <small style="color:${late?C.expense:C.muted}">${esc(t.category)} · ${fmt(t.dueDate)}${pend?(late?" · vencido":" · pendente"):""}</small></div></div>
+        <div class="r"><span class="amt" style="color:${t.type==="income"?C.income:C.expense};opacity:${pend?.6:1}">${t.type==="income"?"+":"−"} ${brl(t.amount)}</span>
+        <button class="del" data-del="${t.id}" aria-label="Excluir">🗑</button></div></div>`;
+    }).join("")}</div>`;
+  }
 
   document.querySelectorAll("[data-tick]").forEach(el=>el.onclick=()=>{
     const t=tx.find(x=>x.id===el.dataset.tick);
@@ -401,14 +483,15 @@ function fillCats(){
 }
 function openForm(){
   form={type:"expense",status:"settled"};
-  $("fDesc").value="";$("fAmt").value="";$("fDate").value=today();
+  $("fDesc").value="";$("fAmt").value="";
+  $("fDate").value=(activeTab.match(/^\d{4}-\d{2}$/))?activeTab+"-01":today();
   syncSeg();fillCats();$("modal").classList.remove("hidden");$("fDesc").focus();
 }
 function syncSeg(){
   $("typeSeg").querySelectorAll("button").forEach(b=>{
     const on=b.dataset.v===form.type;
     b.style.background=on?(form.type==="expense"?C.expense:C.income):C.surface2;
-    b.style.color=on?"#12211B":C.muted;b.style.borderColor=on?"transparent":C.line;
+    b.style.color=on?"#4A1E2A":C.muted;b.style.borderColor=on?"transparent":C.line;
   });
   $("statusSeg").querySelectorAll("button").forEach(b=>{
     const on=b.dataset.v===form.status;
@@ -440,8 +523,8 @@ $("btnSave").onclick=()=>{
 /* ---------- excel ---------- */
 $("btnExport").onclick=()=>{
   if(!tx.length){toast("Nada para exportar ainda.");return}
-  const t=totals();
-  const rows=sorted().map(x=>({
+  const t=totals(tx);
+  const rows=sorted(tx).map(x=>({
     Vencimento:fmt(x.dueDate),Tipo:x.type==="income"?"Receita":"Despesa",
     "Descrição":x.description,Categoria:x.category,
     Valor:x.type==="income"?x.amount:-x.amount,
@@ -454,13 +537,16 @@ $("btnExport").onclick=()=>{
   const resumo=[{Indicador:"Receitas recebidas",Valor:t.income},{Indicador:"Despesas pagas",Valor:t.expense},
     {Indicador:"Saldo realizado",Valor:t.saldo},{Indicador:"A receber",Valor:t.toReceive},
     {Indicador:"A pagar",Valor:t.toPay},{Indicador:"Saldo previsto",Valor:t.saldo+t.toReceive-t.toPay},{},
-    ...byCat("expense").map(c=>({Indicador:"Despesa · "+c.name,Valor:c.value}))];
+    ...byCat("expense",tx).map(c=>({Indicador:"Despesa · "+c.name,Valor:c.value}))];
   const ws2=XLSX.utils.json_to_sheet(resumo);ws2["!cols"]=[{wch:28},{wch:14}];
   XLSX.utils.book_append_sheet(wb,ws2,"Resumo");
   XLSX.writeFile(wb,`livro-caixa-${today()}.xlsx`);
   toast("Planilha gerada.");
 };
-$("btnImport").onclick=()=>$("fileInput").click();
+$("btnImport").onclick=()=>{
+  if(typeof XLSX==="undefined"){toast("Biblioteca de Excel não carregou. Confira a pasta lib.");return}
+  $("fileInput").click();
+};
 function parseAmt(v){
   if(typeof v==="number")return v;
   const s=String(v||"").replace(/[R$\s]/g,"").replace(/\./g,"").replace(",",".");
@@ -505,7 +591,7 @@ $("fileInput").onchange=e=>{
       }
       if(!imp.length){toast("Nenhuma linha com valor válido.");return}
       tx=[...imp,...tx];save();render();toast(imp.length+" lançamento(s) importado(s).");
-    }catch(err){toast("Não consegui ler o arquivo. Use .xlsx ou .csv.")}
+    }catch(err){toast("Falha ao ler: "+(err&&err.message?err.message:"arquivo não reconhecido"))}
   };
   r.readAsArrayBuffer(f);e.target.value="";
 };
@@ -516,11 +602,10 @@ function notifyDue(){
   const key="livrocaixa.notified."+today();
   if(localStorage.getItem(key))return;
   const a=alertsData();
-  const n=a.overdue.length+a.soon.filter(t=>daysUntil(t.dueDate)<=1).length;
-  if(!n)return;
+  const hoje=a.soon.filter(t=>daysUntil(t.dueDate)<=1).length;
+  if(!a.overdue.length&&!hoje)return;
   const parts=[];
   if(a.overdue.length)parts.push(`${a.overdue.length} vencida(s)`);
-  const hoje=a.soon.filter(t=>daysUntil(t.dueDate)<=1).length;
   if(hoje)parts.push(`${hoje} vencendo`);
   new Notification("Livro Caixa",{body:`Você tem ${parts.join(" e ")}.`,icon:"icon-192.png",tag:"livrocaixa-due"});
   localStorage.setItem(key,"1");
